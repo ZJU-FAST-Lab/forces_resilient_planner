@@ -1,0 +1,139 @@
+<launch>
+  <arg name="map_size_x_"/>
+  <arg name="map_size_y_"/>
+  <arg name="map_size_z_"/>
+
+  <arg name="init_x"/>
+  <arg name="init_y"/>
+  <arg name="init_z"/> 
+
+  <arg name="odometry_topic"/>
+  <arg name="cmd_topic"/>
+  <arg name="forces_topic"/>
+  <arg name="thrust_topic"/>
+  <arg name="depth_topic"/>
+
+  <arg name="cx"/>
+  <arg name="cy"/>
+  <arg name="fx"/>
+  <arg name="fy"/>
+
+  <arg name="mass"/>
+  <arg name="max_vel"/>
+  <arg name="max_acc"/>
+
+  <arg name="sim_odom_type"/>
+  <arg name="use_global_map"/>
+
+  <arg name="nmpc/w_stage_wp" />
+  <arg name="nmpc/w_stage_input"/>
+  <arg name="nmpc/w_terminal_wp"/>
+  <arg name="nmpc/w_terminal_input"/>
+
+  <arg name="nmpc/w_final_stage_wp" />
+  <arg name="nmpc/w_final_stage_input"/>
+  <arg name="nmpc/w_final_terminal_wp" />
+  <arg name="nmpc/w_final_terminal_input" />
+
+  
+  <arg name="nmpc/drag_coefficient"/>
+  <arg name="nmpc/w_input_rate"/>
+  <arg name="nmpc/ego_r" />
+  <arg name="nmpc/ego_h" />
+  <arg name="nmpc/g_acc" />
+
+
+  <!--mapping paras begin-->
+  <!-- main node -->
+  <node pkg="resilient_planner" name="resilient_planner_node" type="resilient_planner_node" output="screen">
+    <remap from="/odom_world" to="$(arg odometry_topic)"/>
+    <remap from="/pos_cmd" to="$(arg cmd_topic)"/> 
+    <remap from="/forces" to="$(arg forces_topic)"/> 
+    <remap from="/thrust" to="$(arg thrust_topic)"/> 
+    <remap from="/depth_topic" to="$(arg depth_topic)" />
+ 
+    <!--mapping paras -->
+    <param name="occ_map/map_size_x" value="$(arg map_size_x_)" type="double"/>
+    <param name="occ_map/map_size_y" value="$(arg map_size_y_)" type="double"/>
+    <param name="occ_map/map_size_z" value="$(arg map_size_z_)" type="double"/>
+    <param name="occ_map/local_radius_x"  value="6" /> 
+    <param name="occ_map/local_radius_y"  value="6" /> 
+    <param name="occ_map/local_radius_z"  value="3" />
+    <param name="occ_map/resolution" value="0.1" type="double"/>
+    <param name="occ_map/show_raw_depth" value="true" type="bool"/>
+    <param name="occ_map/show_filter_proj_depth" value="true" type="bool"/>
+		<param name="occ_map/depth_scale" value="1000.0"/>
+		<param name="occ_map/depth_filter_maxdist"   value="6.0"/>
+    <param name="occ_map/depth_filter_mindist"   value="0.1"/>
+		<param name="occ_map/depth_filter_margin"    value="1"/>
+    <param name="occ_map/skip_pixel" value="2"/>
+
+    <!-- use when mapping frequency is high (>= 30Hz) -->
+    <param name="occ_map/use_shift_filter" value="true" type="bool"/>
+    <param name="occ_map/depth_filter_tolerance" value="0.2"/>
+    
+    <param name="occ_map/cx" value="$(arg cx)"/>
+    <param name="occ_map/cy" value="$(arg cy)"/>
+    <param name="occ_map/fx" value="$(arg fx)"/>
+    <param name="occ_map/fy" value="$(arg fy)"/>
+    <param name="occ_map/rows" value="480"/>
+    <param name="occ_map/cols" value="640"/>
+
+    <param name="occ_map/prob_hit_log"  value="1.2"/>
+    <param name="occ_map/prob_miss_log" value="-0.50"/>
+    <param name="occ_map/clamp_min_log"  value="-1.0"/>
+    <param name="occ_map/clamp_max_log"  value="2.0"/>
+    <param name="occ_map/min_occupancy_log"  value="1.70"/>
+    <param name="occ_map/min_ray_length" value="0.1"/>
+    <param name="occ_map/max_ray_length" value="6.0"/>
+    <param name="occ_map/use_global_map" value="$(arg use_global_map)"/>
+    <!--mapping paras end-->
+
+    <param name="pos_checker/hrz_safe_radius" value="0.2"/>
+    <param name="pos_checker/vtc_safe_radius" value="$(arg nmpc/ego_h)"/>
+    <param name="pos_checker/copter_diag_len" value="$(arg nmpc/ego_r)"/>  
+    <param name="pos_checker/dt" value="0.015"/>
+    <param name="pos_checker/inflate" value="true"/>
+
+
+    <!-- kinodynamic path searching -->
+    <param name="search/max_tau" value="0.5" type="double"/>
+    <param name="search/init_max_tau" value="0.5" type="double"/>  
+    <!-- the first tau in the traj -->
+    <param name="search/max_vel" value="$(arg max_vel)" type="double"/>
+    <param name="search/max_acc" value="$(arg max_acc)" type="double"/>
+    <param name="search/w_time" value="10.0" type="double"/>
+    <param name="search/horizon" value="7.5" type="double"/>
+    <param name="search/lambda_heu" value="5.0" type="double"/>
+    <param name="search/resolution_astar" value="0.1" type="double"/>
+    <param name="search/time_resolution" value="0.8" type="double"/>
+    <param name="search/margin" value="0.2" type="double"/>
+    <param name="search/allocate_num" value="100000" type="int"/>
+    <param name="search/check_num" value="15" type="int"/>
+
+    <!-- NMPC planner -->
+    <param name="nmpc/w_stage_wp" value="$(arg nmpc/w_stage_wp)"    />
+    <param name="nmpc/w_stage_input" value="$(arg nmpc/w_stage_input)" />
+    <param name="nmpc/w_terminal_wp" value="$(arg nmpc/w_terminal_wp)"/>
+    <param name="nmpc/w_terminal_input" value="$(arg nmpc/w_terminal_input)" />
+
+    <param name="nmpc/w_final_stage_wp" value="$(arg nmpc/w_final_stage_wp)"/>
+    <param name="nmpc/w_final_stage_input" value="$(arg nmpc/w_final_stage_input)" />
+    <param name="nmpc/w_final_terminal_wp" value="$(arg nmpc/w_final_terminal_wp)" />
+    <param name="nmpc/w_final_terminal_input" value="$(arg nmpc/w_final_terminal_input)" />
+
+    <param name="nmpc/w_input_rate" value="$(arg nmpc/w_input_rate)" />
+    <param name="nmpc/mass" value="$(arg mass)"/>
+    <param name="nmpc/ego_r" value="$(arg nmpc/ego_r)" />
+    <param name="nmpc/ego_h" value="$(arg nmpc/ego_h)" />
+    <param name="nmpc/g_acc" value="$(arg nmpc/g_acc)" />
+    <param name="nmpc/drag_coefficient" value="$(arg nmpc/drag_coefficient)" />
+
+    <param name="nmpc/init_x" value="$(arg init_x)"/>
+    <param name="nmpc/init_y" value="$(arg init_y)"/>
+    <param name="nmpc/init_z" value="$(arg init_z)"/>
+    <param name="nmpc/sim_odom_type" value="$(arg sim_odom_type)"/>
+
+  </node>
+
+</launch>

@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- size of map, change the size inflate x, y, z according to your application -->
+  <arg name="map_size_x" value="40.0"/>
+  <arg name="map_size_y" value="40.0"/>
+  <arg name="map_size_z" value="3.0"/>
+
+  <arg name="init_x" value="0.0"/>
+  <arg name="init_y" value="0.0"/>
+  <arg name="init_z" value="1.0"/> 
+
+  <!-- topic of your odometry such as VIO or LIO -->
+  <arg name="odom_topic" value="/hummingbird/ground_truth/odometry" />
+  <!-- <arg name="odom_topic" value="/vid_estimator/imu_propagate" />  -->
+  <arg name="cmd_topic" value="/hummingbird/command/trajectory" />
+
+  <arg name="forces_topic" value="/vid_estimator/extForces" />
+  <arg name="thrust_topic" value="/hummingbird/thrust" />
+
+  <!-- main algorithm params -->
+  <include file="$(find resilient_planner)/launch/advanced_param.xml">
+
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+
+    <arg name="init_x" value="$(arg init_x)"/>
+    <arg name="init_y" value="$(arg init_y)"/>
+    <arg name="init_z" value="$(arg init_z)"/>
+
+    <arg name="odometry_topic" value="$(arg odom_topic)"/>
+    <arg name="cmd_topic" value="$(arg cmd_topic)"/>
+    <arg name="forces_topic" value="$(arg forces_topic)" />
+    <arg name="thrust_topic" value="$(arg thrust_topic)" />
+
+    <!-- intrinsic params of the depth camera -->
+    <arg name="cx" value="320.5"/>
+    <arg name="cy" value="240.5"/>
+    <arg name="fx" value="205.46963709898583"/>
+    <arg name="fy" value="205.46963709898583"/> 
+
+    <!-- depth topic: depth image, 640x480 by default -->
+    <arg name="depth_topic" value="/hummingbird/vi_sensor/camera_depth/depth/disparity"/>
+
+    <!-- maximum velocity and acceleration the drone will reach -->
+    <arg name="max_vel" value="2.0" />
+    <arg name="max_acc" value="3.0" />
+
+
+    <arg name="sim_odom_type" value="2" />  <!--1 is imu 2 is rotorS gt-->
+
+    <arg name="mass" value="0.745319" />      
+    <arg name="use_global_map" value="false" />  
+
+    <arg name="nmpc/w_stage_wp" value="7.0" />
+    <arg name="nmpc/w_stage_input" value="1.2"/>
+    <arg name="nmpc/w_terminal_wp" value="12.0" />
+    <arg name="nmpc/w_terminal_input" value="0.5"/>
+
+    <arg name="nmpc/w_final_stage_wp" value="12.0" />
+    <arg name="nmpc/w_final_stage_input" value="1.5" />
+    <arg name="nmpc/w_final_terminal_wp" value="15.0" />
+    <arg name="nmpc/w_final_terminal_input" value="0.5" />
+
+    <arg name="nmpc/w_input_rate" value="80.0" />
+    <arg name="nmpc/ego_r" value="0.27"/>
+    <arg name="nmpc/ego_h" value="0.0425" />
+    <arg name="nmpc/g_acc" value="9.81" />
+    <arg name="nmpc/drag_coefficient" value="0.33" />
+      
+    
+  </include>
+
+  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
+    <remap from="~odom" to="$(arg odom_topic)"/>        
+    <remap from="~goal" to="/move_base_simple/goal"/>
+    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
+    <param name="waypoint_type" value="manual-lonely-waypoint"/>    
+  </node>
+</launch>

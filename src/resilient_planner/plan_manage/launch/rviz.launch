@@ -1,0 +1,5 @@
+<launch>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find resilient_planner)/launch/simulator.rviz" required="true" />
+
+
+</launch>
