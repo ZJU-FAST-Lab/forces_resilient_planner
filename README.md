@@ -61,7 +61,7 @@ Follow the instructions and create a new catkin workspace at ``${YOUR_ROTORS_WOR
 Firstly, you should request an academic license [here](https://www.embotech.com/products/forcespro/licensing/). 
 You can directly use the compiled version in this repo for testing. And if you want to change settiings of the NMPC solver, you need to use matlab on ubuntu to automatically regenerate it and replace the previous generated code.
 
-After you build on ROS, you can find the folder ``src/resilient_planner/plan_manage/matlab_code``. In matlab terminal, run ``genearate_solver.m``, then re-build in the workspace and you can get the newly generated code in the folder ``src/resilient_planner/plan_manage/solver`` for useage.
+After you build on ROS, you can find the folder ``src/resilient_planner/plan_manage/matlab_code``. In matlab terminal, run ``run.m``, then re-build in the workspace and you can get the newly generated code in the folder ``src/resilient_planner/plan_manage/solver`` for useage.
 
 ## 2. Build on ROS
 
@@ -91,7 +91,7 @@ source devel/setup.bash
 roslaunch vid_estimator vid_sim.launch
 ```
 
-Then you can use the keyboard to move the quadrotor for VID-Fusion initializations. For details about the estimator setup, please carefully read the documents of VID-Fusion.
+Then you can use the keyboard to move the quadrotor for VID-Fusion initializations. For details about the estimator setup, please carefully read the documents of VID-Fusion. After finish the setup process, use the keyboard to make the quadrotor hovering around z = 1.0.
 
 <p align="center">
   <img src="docs/keyboard.png" width = "793.5" height = "446.5"/>
@@ -105,7 +105,7 @@ In directory ``~/forces_resilient_planner``, open a new terminal and launch the 
 source devel/setup.bash && roslaunch resilient_planner rotor_sim.launch
 ```
 
-If everything goes well, you should be able to navigate the drone as the gif shows below.
+If everything goes well, you should be able to navigate the drone by 2D-Nav Goal
 
 
 # Licence
