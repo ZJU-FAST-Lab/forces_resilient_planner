@@ -10,7 +10,7 @@
 //for img debug
 #include <opencv2/opencv.hpp>
 
-namespace tgk_planner
+namespace resilient_planner
 {
 void OccMap::resetBuffer(Eigen::Vector3d min_pos, Eigen::Vector3d max_pos)
 {
@@ -182,11 +182,7 @@ void OccMap::localOccVisCallback(const ros::TimerEvent& e)
   Eigen::Vector3i min_id, max_id;
   posToIndex(local_range_min_, min_id);
   posToIndex(local_range_max_, max_id);
-// 	ROS_INFO_STREAM("local_range_min_: " << local_range_min_.transpose());
-// 	ROS_INFO_STREAM("local_range_max_: " << local_range_max_.transpose());
-// 	ROS_INFO_STREAM("min_id: " << min_id.transpose());
-// 	ROS_INFO_STREAM("max_id: " << max_id.transpose());
-	
+
   min_id(0) = max(0, min_id(0));
   min_id(1) = max(0, min_id(1));
   min_id(2) = max(0, min_id(2));
@@ -625,12 +621,12 @@ void OccMap::globalCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   global_cloud_sub_.shutdown();
 }
 
-
-bool OccMap::collisionCheck(Eigen::Vector3d &pos, double ratio)
+// if collide return true
+bool OccMap::checkPosSurround(Eigen::Vector3d &pos, double inflate_ratio)
 {
-  int x_size = ceil(ego_r_*ratio  / resolution_);
-  int y_size = ceil(ego_r_*ratio  / resolution_);
-  int z_size = ceil(ego_h_*ratio  / resolution_);
+  int x_size = ceil(ego_r_*inflate_ratio  / resolution_);
+  int y_size = ceil(ego_r_*inflate_ratio  / resolution_);
+  int z_size = ceil(ego_h_*inflate_ratio  / resolution_);
   Eigen::Vector3d grid(pos);
   for (int i = -x_size; i <= x_size; ++i)
     for (int j = -y_size; j <= y_size; ++j)
@@ -639,32 +635,101 @@ bool OccMap::collisionCheck(Eigen::Vector3d &pos, double ratio)
         grid = pos + Eigen::Vector3d(i, j, k) * resolution_;
         if (getVoxelState(grid) != 0)
         {
-          std::cout << "[collisionCheck] the collided point is ......" << grid << std::endl;
-          return true; // collide
+          return false;
         }
       }  
 
-  return false; // no collision
+  return true;
 }
 
+bool OccMap::checkState(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double inflate_ratio)
+{
+  vector<Eigen::Vector3d> line_grids;
 
+  Eigen::Vector3d cw_edge_pos, ccw_edge_pos;
+  Eigen::Vector2d vel_hor, cw_radius_vec;
+  cw_edge_pos[2] = pos[2];
+  ccw_edge_pos[2] = pos[2];
+  vel_hor[0] = vel[0];
+  vel_hor[1] = vel[1];
+  double v_hor_norm = vel_hor.norm();
+  if (v_hor_norm < 1e-4)
+  {
+    vel_hor[0] = 1;
+    vel_hor[1] = 1;
+  }
+  Eigen::Matrix2d r_m;
+  r_m << 0, 1,
+        -1, 0;
+  cw_radius_vec = r_m * vel_hor;
+  cw_radius_vec = cw_radius_vec.normalized() * ego_r_ * inflate_ratio;
+  cw_edge_pos.head(2) = pos.head(2) + cw_radius_vec;
+  ccw_edge_pos.head(2) = pos.head(2) - cw_radius_vec;
+  //add horizontal vox;
+  getlineGrids(cw_edge_pos, ccw_edge_pos, line_grids);
+  Eigen::Vector3d vertical_up(pos), vertical_down(pos);
+  vertical_up(2) += ego_h_ * inflate_ratio;
+  vertical_down(2) -= ego_h_ * inflate_ratio;
+  //add veltical vox;
+  getlineGrids(vertical_up, vertical_down, line_grids);
+  for (const auto &grid : line_grids)
+  {
+    if (getVoxelState(grid) != 0)
+    {
+      //cout << "collision: " << grid.transpose() << endl;
+      return false;
+    }
+  }
+  return true;
+}
 
+void OccMap::getlineGrids(const Eigen::Vector3d &s_p, const Eigen::Vector3d &e_p, vector<Eigen::Vector3d> &grids)
+{
+  RayCaster raycaster;
+  Eigen::Vector3d ray_pt;
+  Eigen::Vector3d start = s_p / resolution_, end = e_p / resolution_;
+  bool need_ray = raycaster.setInput(start, end);
+  if (need_ray)
+  {
+    while (raycaster.step(ray_pt))
+    {
+      Eigen::Vector3d tmp = (ray_pt)*resolution_;
+      tmp[0] += resolution_ / 2.0;
+      tmp[1] += resolution_ / 2.0;
+      tmp[2] += resolution_ / 2.0;
+      grids.push_back(tmp);
+    }
+  }
 
+  //check end
+  Eigen::Vector3d end_idx;
+  end_idx[0] = std::floor(end.x());
+  end_idx[1] = std::floor(end.y());
+  end_idx[2] = std::floor(end.z());
+
+  ray_pt[0] = (double)end_idx[0];
+  ray_pt[1] = (double)end_idx[1];
+  ray_pt[2] = (double)end_idx[2];
+  Eigen::Vector3d tmp = (ray_pt)*resolution_;
+  tmp[0] += resolution_ / 2.0;
+  tmp[1] += resolution_ / 2.0;
+  tmp[2] += resolution_ / 2.0;
+  grids.push_back(tmp);
+}
 
 void OccMap::init(const ros::NodeHandle& nh)
 {
   node_ = nh;
   /* ---------- param ---------- */
+  node_.param("occ_map/origin_x", origin_(0), -20.0);
+  node_.param("occ_map/origin_y", origin_(1), -20.0);
+  node_.param("occ_map/origin_z", origin_(2), 0.0);
   node_.param("occ_map/map_size_x", map_size_(0), 40.0);
   node_.param("occ_map/map_size_y", map_size_(1), 40.0);
   node_.param("occ_map/map_size_z", map_size_(2), 5.0);
   node_.param("occ_map/local_radius_x", sensor_range_(0), -1.0);
   node_.param("occ_map/local_radius_y", sensor_range_(1), -1.0);
   node_.param("occ_map/local_radius_z", sensor_range_(2), -1.0);
-
-  origin_(0) = -0.5*map_size_(0);
-  origin_(1) = -0.5*map_size_(1);
-  origin_(2) = -0.1;
 
   node_.param("occ_map/resolution", resolution_, 0.2);
   node_.param("occ_map/use_global_map", use_global_map_, false);
@@ -808,4 +873,4 @@ void OccMap::init(const ros::NodeHandle& nh)
   projected_pc_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/occ_map/filtered_pcl", 1);
 }
 
-}  // namespace tgk_planner
+}  // namespace resilient_planner

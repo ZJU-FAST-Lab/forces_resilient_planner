@@ -151,7 +151,7 @@ namespace resilient_planner
           /* inside map range */
           if (pro_state(0) <= origin_(0) || pro_state(0) >= map_size_3d_(0)*0.5 ||
               pro_state(1) <= origin_(1) || pro_state(1) >= map_size_3d_(1)*0.5  ||
-              pro_state(2) <= origin_(2) || pro_state(2) >= map_size_3d_(2)*0.5 )
+              pro_state(2) <= 0.1 || pro_state(2) >= map_size_3d_(2)*0.5 )
           {
             continue;
           }
@@ -184,7 +184,6 @@ namespace resilient_planner
           }
 
           /* collision free */
-          Eigen::Vector3d pos;
           Eigen::Matrix<double, 6, 1> xt;
           bool is_occ = false;
 
@@ -192,10 +191,9 @@ namespace resilient_planner
           {
             double dt = tau * double(k) / double(check_num_);
             stateTransit(cur_state, xt, um, dt);
-            pos = xt.head(3);
-            if (grid_map_->collisionCheck(pos, 1.6))
+            if (!grid_map_->checkState(xt.head(3), xt.tail(3), 1.5))
             {
-              is_occ = true;
+              is_occ = true; // collide
               break;
             }
           }
@@ -410,12 +408,11 @@ namespace resilient_planner
       }
 
       if (coord(0) < origin_(0) || coord(0) >= map_size_3d_(0)*0.5 || coord(1) < origin_(1) ||
-          coord(1) >= map_size_3d_(1)*0.5  || coord(2) < origin_(2) || coord(2) >= map_size_3d_(2)*0.5 )
+          coord(1) >= map_size_3d_(1)*0.5  || coord(2) < 0.1 || coord(2) >= map_size_3d_(2)*0.5 )
       {
         return false;
       }
-
-      if (grid_map_->collisionCheck(coord, 1.6))
+      if (!grid_map_->checkState(coord, vel, 1.5))
       {
         return false;
       }
@@ -503,7 +500,7 @@ namespace resilient_planner
     return dts;
   }
 
-  void KinodynamicAstar::intialGridMap(tgk_planner::OccMap::Ptr &env_ptr_)
+  void KinodynamicAstar::intialGridMap(resilient_planner::OccMap::Ptr &env_ptr_)
   {
 
     grid_map_ = env_ptr_;

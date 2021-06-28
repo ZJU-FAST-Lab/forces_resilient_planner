@@ -1,9 +1,9 @@
 #ifndef _NMPC_MANAGE_H_
 #define _NMPC_MANAGE_H_
 
-//other dependences
 #include <plan_manage/nmpc_utils.h>
 
+using namespace resilient_planner;
 
 class NMPCManage
 {
@@ -20,30 +20,25 @@ public:
     GEN_NEW_TRAJ,
     REPLAN_TRAJ,
     EXEC_TRAJ,
-    EMERGENCY_STOP
   };
 
   void init(ros::NodeHandle& nh);
-  std::vector<Eigen::Vector3d> kino_path_;
-
 
 private:
 
-  /* front-end map and path*/
-  
-  tgk_planner::OccMap::Ptr env_ptr_;
+  /* front-end map*/
+  OccMap::Ptr env_ptr_;
 
   /* fsm parameters */
   FSM_EXEC_STATE exec_state_;
-  int wps_index_;
 
   /* odom variables */
-  Eigen::VectorXd stateOdom_, stateOdomPrevious_, stateMpc_;
+  Eigen::VectorXd stateOdom_, stateOdomPrevious_, stateMpc_; //P v euler;
+  Eigen::Vector3d end_pt_, start_acc_, end_acc_, external_acc_, last_external_acc_; 
+  
+  /* for yaw settings */
   double init_yaw_;
-  Eigen::Vector3d end_pt_, start_acc_, end_acc_, external_acc_, last_external_acc_;
-  double thrust_acc_ = 0;
-  //P v euler;  // odometry state
-
+  bool call_init_yaw_ = false;
 
   /* decision variables */
   bool have_traj_ = false;
@@ -55,24 +50,23 @@ private:
   bool exec_mpc_ = false;
 
   bool replan_force_surpass_ = false;
-  bool call_escape_emergency_ = false;
-  bool call_init_yaw_ = false;
   bool consider_force_ = false;
 
   int surpass_count_ = 0;
   int plan_fail_count_ = 0;
+  
   /* MPC output */
-  resilient_planner::NMPCSolver nmpc_solver_;
+  NMPCSolver nmpc_solver_;
 
   double ext_noise_bound_;
   double odomT;
   ros::Time tOdom, tMpc;
-
+  std::vector<Eigen::Vector3d> kino_path_;
 
   /* ROS  related */
-  ros::Subscriber odom_sub_, waypoint_sub_, extforce_sub_;
-  ros::Timer exec_timer_, safety_timer_, adjust_yaw_timer_, mpc_timer_, waypoint_timer_;
-  ros::Publisher odom_vis_pub_, path_pub_, poly_pub_, pos_cmd_pub_, path_point_pub_, nmpc_point_pub_ , trajectory_pub_, goal_point_pub_;
+  ros::Subscriber odom_sub_, goal_sub_, extforce_sub_;
+  ros::Timer exec_timer_, safety_timer_, adjust_yaw_timer_, mpc_timer_;
+  ros::Publisher path_pub_, poly_pub_, pos_cmd_pub_, nmpc_point_pub_ , goal_point_pub_;
 
   /* FSM related */ 
   void changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call);
@@ -84,9 +78,9 @@ private:
   /* ROS callbacks */
   void odometryCallback(const nav_msgs::Odometry& msg);
   void odometryTransCallback(const nav_msgs::Odometry& msg);
-  void waypointCallback(const nav_msgs::PathConstPtr& msg);
+  void goalCallback(const geometry_msgs::PoseStamped &msg);
   void extforceCallback(const geometry_msgs::WrenchStamped& msg);
-  //void thrustCallback(const std_msgs::Float64& msg);
+
   /* visualization */
   void displayPath();  
   void displayGoalPoint();

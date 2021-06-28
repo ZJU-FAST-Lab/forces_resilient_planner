@@ -15,24 +15,19 @@ function cost = mpc_objective(z, p)
     ego_yaw     =   z(index.z.euler(3));    % current yaw
           
     %% waypoint cost
-    Q_wp_pos    =   w_wp * diag([1.0; 1.0; 1.0]);
-    cost_wp_pos =   (ego_ref(1:3) - ego_pos)' * Q_wp_pos ...
-        * (ego_ref(1:3) - ego_pos);
+    Q_wp_pos    = w_wp * diag([1.0; 1.0; 1.0]);
+    cost_wp_pos = (ego_ref(1:3) - ego_pos)' * Q_wp_pos * (ego_ref(1:3) - ego_pos);
     % the cost of yaw tracking
-    cost_wp_yaw =   12* w_wp * ( yaw_ref - ego_yaw)^2;
+    cost_wp_yaw = 12 * w_wp * ( yaw_ref - ego_yaw)^2;
     % total navigation cost
     cost_wp = cost_wp_pos + cost_wp_yaw;   
 
     
     %% control input cost
-    % normalize the input to [-1, 1]
-   
     ego_input_normalized = [ego_input(1)/pr.input.maxRollRate; ego_input(2)/pr.input.maxPitchRate; ...
                             ego_input(3)/pr.input.maxYawRate];
                         
     Q_input = w_input * diag([1.0; 1.0; 1.0]); 
-    
-    
     % the cost
     cost_input = ego_input_normalized' * Q_input * ego_input_normalized;
     

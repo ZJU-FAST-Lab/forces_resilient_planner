@@ -57,6 +57,7 @@ namespace resilient_planner
 
   };
 
+
   class FORCESNormal{
   public:
 
@@ -68,8 +69,8 @@ namespace resilient_planner
     FORCESNLPsolver_normal_params params_;
     FORCESNLPsolver_normal_info info_;
     FORCESParams value_;
-    void setParasNormal(double &w_stage_wp,  double &w_stage_input, double &w_input_rate,
-                        double &w_terminal_wp, double &w_terminal_input);
+    void setParasNormal(double w_stage_wp,  double w_stage_input, double w_input_rate,
+                        double w_terminal_wp, double w_terminal_input);
     void updateNormal(MPCDeque &mpc_output);
     int solveNormal(MPCDeque &mpc_output,  Eigen::Vector3d  &external_acc,
                                 vector<Eigen::Vector3d> &ref_total_pos,
@@ -79,7 +80,6 @@ namespace resilient_planner
                                 Eigen::VectorXd &poly_indices);
 
   };
-
 
 
   class FORCESFinal{
@@ -93,8 +93,8 @@ namespace resilient_planner
     FORCESNLPsolver_final_params params_final_;
     FORCESNLPsolver_final_info info_final_;
     FORCESParams value_final_;
-    void setParasFinal(double &w_final_stage_wp,  double &w_final_stage_input, double &w_input_rate,
-                       double &w_final_terminal_wp, double &w_final_terminal_input);
+    void setParasFinal(double w_final_stage_wp,  double w_final_stage_input, double w_input_rate,
+                       double w_final_terminal_wp, double w_final_terminal_input);
     void updateFinal(MPCDeque &mpc_output);
     int solveFinal(MPCDeque &mpc_output,  Eigen::Vector3d  &external_acc,
                                 vector<Eigen::Vector3d> &ref_total_pos,
@@ -118,13 +118,12 @@ namespace resilient_planner
       ROTATE_YAW,
       PUB_END,
       PUB_TRAJ,
-      EMERGENCY_STOP,
       WAIT
     };
 
     CMD_STATUS  cmd_status_;
 
-    void initROS(ros::NodeHandle& nh, tgk_planner::OccMap::Ptr& env_ptr_);
+    void initROS(ros::NodeHandle& nh, OccMap::Ptr& env_ptr_);
 
     //update euler with matrix
     Eigen::Matrix3d updateMatrix(Eigen::Vector3d& odom_euler, Eigen::Vector3d& odom_vel, double thrust_c);
@@ -141,14 +140,9 @@ namespace resilient_planner
     bool switch_to_final = false;
     bool  have_mpc_traj_ = false;
       
-    /* force noise bound */
-    double ext_noise_bound_ = 0.5;
-
-
     MPCDeque mpc_output_, pre_mpc_output_;  // always keep the size as the length of the planning horizon+1
     Eigen::Vector3d external_acc_;
     Eigen::VectorXd stateMpc_ , stateOdom_;
-    
     
     std::vector<LinearConstraint3D> poly_constraints_;
     std::vector<double> poly_index;
@@ -176,9 +170,7 @@ namespace resilient_planner
     /* drag_coefficient */
     Eigen::Matrix3d drag_coefficient_matrix_;
 
-
     void callInitYaw(Eigen::VectorXd odom, double init_yaw);
-    void callEmergencyStop(Eigen::VectorXd odom); 
     Eigen::VectorXd realOdom_;
     double init_yaw_, init_yaw_dot_;
 
@@ -214,13 +206,13 @@ namespace resilient_planner
 
     /* ROS related */
     ros::Subscriber cloud_sub_, extforce_sub_ ;
-    ros::Publisher ellipsoid_pub_, poly_pub_, mpc_output_pub_, ref_marker_pub_ ;
+    ros::Publisher ellipsoid_pub_, poly_pub_, ref_marker_pub_, nmpc_marker_pub_;
     ros::Time pre_mpc_start_time_ , mpc_start_time_, kino_start_time_, change_yaw_time_;
-    ros::Publisher pos_cmd_pub_, traj_cmd_pub_, nmpc_marker_pub_, cmd_vis_pub_;
+    ros::Publisher pos_cmd_pub_, traj_cmd_pub_, cmd_vis_pub_;
     ros::Timer cmd_timer_;
 
     /* reference kinodynamic a star path */
-    std::unique_ptr<resilient_planner::KinodynamicAstar> kino_path_finder_;
+    std::unique_ptr<KinodynamicAstar> kino_path_finder_;
     Eigen::Vector3d ref_pos_;
     double ref_yaw_;
     double max_tau_;
@@ -266,13 +258,9 @@ namespace resilient_planner
     //vec_E<Ellipsoid3D> Es_;
     std::vector<Eigen::Matrix3d> ellipsoid_matrices_; 
     void displayEllipsoids();
-    void displayEgo();
     void displayRefPoints();
-    void displayRefAll();
     void displayPoly();
     void displayNMPCPoints();
-    void updateMPCOutput();
-    void displayNMPCAll();
 
     /* ROS callbacks */
     void cloudCallback(const sensor_msgs::PointCloud2& msg);

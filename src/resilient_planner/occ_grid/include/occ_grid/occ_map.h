@@ -35,7 +35,7 @@ using std::ceil;
 using std::isnan;
 using std::isinf;
 
-namespace tgk_planner
+namespace resilient_planner
 {
 class OccMap
 {
@@ -59,12 +59,13 @@ public:
   int getVoxelState(const Eigen::Vector3d &pos);
   int getVoxelState(const Eigen::Vector3i &id);
 	ros::Time getLocalTime() { return latest_odom_time_; };
-  bool collisionCheck(Eigen::Vector3d &pos, double ratio);
 
-    /* collision check */
-  double ego_r_, ego_h_;
+  // collision check
+  double ego_r_, ego_h_; // the vertical and horizontal radius
+  bool checkPosSurround(Eigen::Vector3d &pos, double inflate_ratio);
+  bool checkState(const Eigen::Vector3d &pos, const Eigen::Vector3d &vel, double inflate_ratio);
+  void getlineGrids(const Eigen::Vector3d &s_p, const Eigen::Vector3d &e_p, vector<Eigen::Vector3d> &grids);
 
-  
   typedef shared_ptr<OccMap> Ptr;
   
 private:
@@ -169,6 +170,6 @@ private:
   ros::Publisher projected_pc_pub_;
 };
 
-}  // namespace tgk_planner
+}  // namespace resilient_planner
 
 #endif

@@ -3,7 +3,7 @@
   <!-- size of map, change the size inflate x, y, z according to your application -->
   <arg name="map_size_x" value="40.0"/>
   <arg name="map_size_y" value="40.0"/>
-  <arg name="map_size_z" value="3.0"/>
+  <arg name="map_size_z" value="4.0"/>
 
   <arg name="init_x" value="0.0"/>
   <arg name="init_y" value="0.0"/>
@@ -13,7 +13,6 @@
   <arg name="odom_topic" value="/hummingbird/ground_truth/odometry" />
   <!-- <arg name="odom_topic" value="/vid_estimator/imu_propagate" />  -->
   <arg name="cmd_topic" value="/hummingbird/command/trajectory" />
-
   <arg name="forces_topic" value="/vid_estimator/extForces" />
   <arg name="thrust_topic" value="/hummingbird/thrust" />
 
@@ -33,6 +32,8 @@
     <arg name="forces_topic" value="$(arg forces_topic)" />
     <arg name="thrust_topic" value="$(arg thrust_topic)" />
 
+    <arg name="goal_topic" value="/move_base_simple/goal"/>
+    
     <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="320.5"/>
     <arg name="cy" value="240.5"/>
@@ -71,10 +72,4 @@
     
   </include>
 
-  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
-    <remap from="~odom" to="$(arg odom_topic)"/>        
-    <remap from="~goal" to="/move_base_simple/goal"/>
-    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
-    <param name="waypoint_type" value="manual-lonely-waypoint"/>    
-  </node>
 </launch>

@@ -18,8 +18,8 @@ function cost = mpc_objectiveN_normal(z, p)
 
 
     %% waypoint cost
-    Q_wp_pos    =   w_wp * diag([1.0; 1.0; 1.0]);
-    cost_wp_pos =   (ego_ref(1:3) - ego_pos)' * Q_wp_pos  * (ego_ref(1:3) - ego_pos);
+    Q_wp_pos    = w_wp * diag([1.0; 1.0; 1.0]);
+    cost_wp_pos = (ego_ref(1:3) - ego_pos)' * Q_wp_pos  * (ego_ref(1:3) - ego_pos);
     % the cost of yaw tracking
     cost_wp_yaw =  12* w_wp * ( yaw_ref - ego_yaw)^2;
     % total navigation cost

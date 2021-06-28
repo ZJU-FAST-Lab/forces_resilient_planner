@@ -10,30 +10,23 @@ void NMPCManage::init(ros::NodeHandle &nh)
 
   int sim_odom_type;
   nh.param("nmpc/sim_odom_type", sim_odom_type, 1);
+  nh.param("nmpc/ext_noise_bound", ext_noise_bound_, 0.5);
 
   stateOdom_ = Eigen::VectorXd::Zero(9);
   stateOdomPrevious_ = Eigen::VectorXd::Zero(9);
   stateMpc_ = Eigen::VectorXd::Zero(9);
 
   /*  map intial  */
-  env_ptr_.reset(new tgk_planner::OccMap);
+  env_ptr_.reset(new OccMap);
   env_ptr_->init(nh);
-
-
-  ext_noise_bound_ = nmpc_solver_.ext_noise_bound_;
-
 
   nmpc_solver_.initROS(nh, env_ptr_);
 
-  waypoint_sub_ = nh.subscribe("/waypoint_generator/waypoints", 1, &NMPCManage::waypointCallback, this);
-
+  goal_sub_ = nh.subscribe("/goal_topic", 1, &NMPCManage::goalCallback, this);
 
   // publishers
   path_pub_ = nh.advertise<nav_msgs::Path>("kino_path", 1, true);
-  path_point_pub_ = nh.advertise<visualization_msgs::Marker>("astar_path_point", 1, true);
-  //pos_cmd_pub_      = nh.advertise<quadrotor_msgs::PositionCommand>("pos_cmd", 50);
   goal_point_pub_ = nh.advertise<visualization_msgs::Marker>("goal_point", 2);
-  odom_vis_pub_ = nh.advertise<visualization_msgs::Marker>("odom_vis", 500);
   // subscribers
 
   if (sim_odom_type == 1)
@@ -56,48 +49,55 @@ void NMPCManage::init(ros::NodeHandle &nh)
 
 void NMPCManage::mpcCallback(const ros::TimerEvent &e)
 {
-  if (!exec_mpc_)
-    return;
+  if (!exec_mpc_)  return;
 
-  ROS_INFO_STREAM(" NMPCPlanner start ! ");
   int status = nmpc_solver_.solveNMPC(stateOdom_, external_acc_);
   //  1 --- success
-  // -1 --- fail and need replan
   //  0 --- at global end
-  //  2 --  reaching global end process but not finished
+  // -1 --- reaching global end process but not finished
+  // -2 --- need replan
+  // -3 --- odom far away from predict state
   switch (status)
   {
-  case -1:
-  {
-    ROS_INFO_STREAM(" [NMPCPlanner] MPC back-end needs replan ! ");
-    exec_mpc_ = false;
-    changeFSMExecState(REPLAN_TRAJ, "FSM");
-    break;
-  }
+    case 1:
+    {
+      ROS_INFO_STREAM(" [NMPCSolver] Success ! ");
+      break;
+    }
+    case 0:
+    {
+      ROS_INFO_STREAM(" [NMPCSolver] Reach the global end ! ");
+      exec_mpc_ = false;
+      have_target_ = false;
+      ros::Duration(0.1).sleep();
+      changeFSMExecState(WAIT_TARGET, "FSM");
+      break;
+    }
+    case -1:
+    {
+      ROS_INFO_STREAM(" [NMPCSolver] Start to reach the global end ! ");
+      ros::Duration(0.1).sleep();
+      break;
+    }
+    case -2:
+    {
+      ROS_INFO_STREAM(" [NMPCSolver] MPC back-end needs replan ! ");
+      exec_mpc_ = false;
+      changeFSMExecState(REPLAN_TRAJ, "FSM");
+      break;
+    }
+    case -3:
+    {
+      ROS_INFO_STREAM(" [NMPCSolver] Odom far away from predict state ! ");
+      exec_mpc_ = false;
+      changeFSMExecState(WAIT_TARGET, "FSM");
+      break;
+    }
 
-  case 0:
-  {
-    ROS_INFO_STREAM(" [NMPCPlanner] reach the global end  ! ");
-    exec_mpc_ = false;
-    have_target_ = false;
-    ros::Duration(0.1).sleep();
-    changeFSMExecState(WAIT_TARGET, "FSM");
-    break;
-  }
-  case 1:
-  {
-    ROS_INFO_STREAM(" [NMPCPlanner] success ! ");
-    break;
-  }
-  case 2:
-  {
-    ROS_INFO_STREAM(" [NMPCPlanner] start to reach the global end ! ");
-    break;
-  }
   }
 }
 
-static string state_str[8] = {"INIT", "WAIT_TARGET", "INIT_YAW", "GEN_NEW_TRAJ", "REPLAN_TRAJ", "EXEC_TRAJ", "EMERGENCY_STOP"};
+static string state_str[8] = {"INIT", "WAIT_TARGET", "INIT_YAW", "GEN_NEW_TRAJ", "REPLAN_TRAJ", "EXEC_TRAJ"};
 
 void NMPCManage::changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call)
 {
@@ -126,162 +126,139 @@ void NMPCManage::execFSMCallback(const ros::TimerEvent &e)
 
   switch (exec_state_)
   {
-  case INIT:
-  {
-    if (!have_odom_)
+    case INIT:
     {
-      return;
-    }
-    if (have_target_)
-    {
-      changeFSMExecState(WAIT_TARGET, "FSM");
-    }
-    break;
-  }
-
-  case WAIT_TARGET:
-  {
-    if (!have_target_)
-    {
-      consider_force_ = false;
-      return;
-    }
-    else
-    {
-
-      changeFSMExecState(INIT_YAW, "FSM");
-      call_init_yaw_ = true;
-    }
-    break;
-  }
-
-  case INIT_YAW:
-  {
-    if (call_init_yaw_)
-    {
-
-      Eigen::Vector3d dir = end_pt_ - stateOdom_.segment(0, 3);
-      init_yaw_ = atan2(dir(1), dir(0));
-
-      if (abs(stateOdom_(8) - init_yaw_) >= 0.7)
+      if (!have_odom_)
       {
-        nmpc_solver_.callInitYaw(stateOdom_, init_yaw_);
+        return;
       }
-      call_init_yaw_ = false;
+      if (have_target_)
+      {
+        changeFSMExecState(WAIT_TARGET, "FSM");
+      }
       break;
     }
 
-    if (abs(stateOdom_(8) - init_yaw_) < 0.7)
+    case WAIT_TARGET:
     {
-      consider_force_ = true;
-      std::cout << "[resilient_planner] finish init yaw ! stateOdom_(8) " << stateOdom_(8) << " init is : " << init_yaw_ << std::endl;
-      changeFSMExecState(GEN_NEW_TRAJ, "FSM");
-    }
-
-    break;
-  }
-
-  case GEN_NEW_TRAJ:
-  {
-
-    exec_mpc_ = false;
-
-    std::cout << "[resilient_planner: REPLAN_TRAJ] plan_fail_count_ !" << plan_fail_count_ << std::endl;
-    if (plan_fail_count_ > 3){
-      have_target_ = false;
-      changeFSMExecState(WAIT_TARGET, "FSM");
-      plan_fail_count_ = 0;
+      if (!have_target_)
+      {
+        consider_force_ = false;
+        return;
+      }
+      else
+      { 
+        changeFSMExecState(INIT_YAW, "FSM");
+        call_init_yaw_ = true;
+      }
       break;
     }
 
-    if (nmpc_solver_.getKinoPath(stateOdom_, end_pt_, external_acc_, false))
+    case INIT_YAW:
     {
-      std::cout << "[resilient_planner] kino plan success!" << std::endl;
-      have_traj_ = true;
-      trigger_ = false;
-      exec_mpc_ = true;
-      call_escape_emergency_ = true;
-      replan_force_surpass_ = false;
-      nmpc_solver_.getKinoTraj(kino_path_);
-      displayPath();
-      displayGoalPoint();
-      plan_fail_count_ = 0;
-      changeFSMExecState(EXEC_TRAJ, "FSM");
-    }
-    else
-    {
-      plan_fail_count_ += 1;
-      changeFSMExecState(GEN_NEW_TRAJ, "FSM");
-    }
+      if (call_init_yaw_)
+      {
+        Eigen::Vector3d dir = end_pt_ - stateOdom_.segment(0, 3);
+        init_yaw_ = atan2(dir(1), dir(0));
 
-    break;
-  }
+        if (abs(stateOdom_(8) - init_yaw_) >= 0.8)
+        {
+          nmpc_solver_.callInitYaw(stateOdom_, init_yaw_);
+        }
+        call_init_yaw_ = false;
+        break;
+      }
 
-  case REPLAN_TRAJ:
-  {
-    std::cout << "[resilient_planner: REPLAN_TRAJ] plan_fail_count_ !" << plan_fail_count_ << std::endl;
-    exec_mpc_ = false;
-
-    if (plan_fail_count_ > 3){
-      have_target_ = false;
-      changeFSMExecState(WAIT_TARGET, "FSM");
-      plan_fail_count_ = 0;
-      break;
-    }
-
-    if (nmpc_solver_.getKinoPath(stateOdom_, end_pt_, external_acc_, true)){
-      std::cout << "[resilient_planner] kino plan success!" << std::endl;
-      have_traj_ = true;
-      trigger_ = false;
-      exec_mpc_ = true;
-      replan_force_surpass_ = false;
-      nmpc_solver_.getKinoTraj(kino_path_);
-      displayPath();
-      displayGoalPoint();
-      plan_fail_count_ = 0;
-      changeFSMExecState(EXEC_TRAJ, "FSM");
-    }
-    else
-    {
-      plan_fail_count_ += 1;
-
-      changeFSMExecState(GEN_NEW_TRAJ, "FSM");
-    }
-
-    break;
-  }
-
-  case EXEC_TRAJ:
-  {
-    // change the target
-    if (trigger_ && exec_mpc_)
-    {
-      cout << "exec_mpc_." << exec_mpc_ << endl;
-      changeFSMExecState(REPLAN_TRAJ, "FSM");
-      break;
-    }
-
-    break;
-  }
-
-  case EMERGENCY_STOP:
-  {
-
-    if (call_escape_emergency_)
-    {
-      nmpc_solver_.callEmergencyStop(stateOdom_);
-    }
-    else
-    {
-      if (stateOdom_.segment(3, 3).norm() < 0.1)
+      if (abs(stateOdom_(8) - init_yaw_) < 0.8)
+      {
+        consider_force_ = true;
+        std::cout << "[resilient_planner] Finish init yaw ! The odom is: " << stateOdom_(8) << ", yaw is : " << init_yaw_ << std::endl;
         changeFSMExecState(GEN_NEW_TRAJ, "FSM");
+      }
+
+      break;
     }
 
-    call_escape_emergency_ = false;
-    break;
-  }
+    case GEN_NEW_TRAJ:
+    {
+      exec_mpc_ = false;
+
+      std::cout << "[resilient_planner] Plan_fail_count_ ：" << plan_fail_count_ << std::endl;
+      if (plan_fail_count_ > 3){
+        have_target_ = false;
+        changeFSMExecState(WAIT_TARGET, "FSM");
+        plan_fail_count_ = 0;
+        break;
+      }
+
+      if (nmpc_solver_.getKinoPath(stateOdom_, end_pt_, external_acc_, false))
+      {
+        std::cout << "[resilient_planner] Kino plan success!" << std::endl;
+        have_traj_ = true;
+        trigger_ = false;
+        exec_mpc_ = true;
+        replan_force_surpass_ = false;
+        nmpc_solver_.getKinoTraj(kino_path_);
+        displayPath();
+        plan_fail_count_ = 0;
+        changeFSMExecState(EXEC_TRAJ, "FSM");
+      }
+      else
+      {
+        plan_fail_count_ += 1;
+        changeFSMExecState(GEN_NEW_TRAJ, "FSM");
+      }
+
+      break;
+    }
+
+    case REPLAN_TRAJ:
+    {
+      std::cout << "[resilient_planner] Replan_fail_count_ ：" << plan_fail_count_ << std::endl;
+      exec_mpc_ = false;
+
+      if (plan_fail_count_ > 3){
+        have_target_ = false;
+        changeFSMExecState(WAIT_TARGET, "FSM");
+        plan_fail_count_ = 0;
+        break;
+      }
+
+      if (nmpc_solver_.getKinoPath(stateOdom_, end_pt_, external_acc_, true)){
+        std::cout << "[resilient_planner] Kino replan success!" << std::endl;
+        have_traj_ = true;
+        trigger_ = false;
+        exec_mpc_ = true;
+        replan_force_surpass_ = false;
+        nmpc_solver_.getKinoTraj(kino_path_);
+        displayPath();
+        plan_fail_count_ = 0;
+        changeFSMExecState(EXEC_TRAJ, "FSM");
+      }
+      else
+      {
+        plan_fail_count_ += 1;
+        changeFSMExecState(GEN_NEW_TRAJ, "FSM");
+      }
+
+      break;
+    }
+
+    case EXEC_TRAJ:
+    {
+      // change the target
+      if (trigger_ && exec_mpc_)
+      {
+        cout << "exec_mpc_." << exec_mpc_ << endl;
+        changeFSMExecState(REPLAN_TRAJ, "FSM");
+      }
+
+      break;
+    }
+
   }
 }
+
 
 void NMPCManage::displayPath()
 {
@@ -304,33 +281,34 @@ void NMPCManage::displayPath()
   path_pub_.publish(path_msg);
 }
 
+
 void NMPCManage::checkReplanCallback(const ros::TimerEvent &e)
 {
   // step one: check the target
   // 1. the local target is or not collision free
   if (have_target_)
   {
-    if (env_ptr_->collisionCheck(end_pt_, 1.2))
+    if (!env_ptr_->checkPosSurround(end_pt_, 1.2))
     {
       /* try to find a max distance goal around */
       bool new_goal = false;
-      const double dr = 0.25, dtheta = 30, dz = 0.2;
+      const double dr = 0.2, dtheta = 30, dz = 0.2;
       double new_x, new_y, new_z, max_dist = -1.0;
       Eigen::Vector3d goal;
 
       for (double r = dr; r <= 5 * dr + 1e-3; r += dr){
         for (double theta = -90; theta <= 270; theta += dtheta){
-          for (double nz = 1.0; nz <= 1.5; nz += dz){
+          for (double nz = 1.0; nz <= 1.6; nz += dz){
 
             new_x = end_pt_(0) + r * cos(theta);
             new_y = end_pt_(1) + r * sin(theta);
             new_z = nz;
 
             Eigen::Vector3d new_pt(new_x, new_y, new_z);
-
-            if (!env_ptr_->collisionCheck(new_pt, 1.5)){
+            if (env_ptr_->checkPosSurround(new_pt, 1.5)){
               end_pt_ = new_pt;
               have_target_ = true;
+              displayGoalPoint();
               break;
             }
           }
@@ -338,7 +316,7 @@ void NMPCManage::checkReplanCallback(const ros::TimerEvent &e)
       }
 
       if (exec_state_ == EXEC_TRAJ){
-        ROS_WARN("[checkReplan] change goal, replan.");
+        ROS_WARN("[checkReplan] Change goal, replan.");
         changeFSMExecState(REPLAN_TRAJ, "SAFETY");
       }else{
         have_target_ = false;
@@ -351,10 +329,10 @@ void NMPCManage::checkReplanCallback(const ros::TimerEvent &e)
   if (have_traj_)
   {
     for (int i = 0; i < kino_path_.size(); i+= 5)
-    {
-      if (env_ptr_->collisionCheck(kino_path_[i], 1.5))
+    {  
+      if (!env_ptr_->checkPosSurround(kino_path_[i], 1.1))
       {
-        ROS_WARN("[checkReplan] trajectory collides, replan.");
+        ROS_WARN("[checkReplan] Trajectory collides, replan.");
         changeFSMExecState(REPLAN_TRAJ, "SAFETY");
         break;
       }
@@ -390,11 +368,10 @@ void NMPCManage::extforceCallback(const geometry_msgs::WrenchStamped &msg)
   // the sub is mass normolized value
   if (consider_force_)
   {
-
     double diverse = max(max(abs(msg.wrench.force.x), abs(msg.wrench.force.y)), abs(msg.wrench.force.z));
     if (diverse <= ext_noise_bound_)
     {
-      external_acc_ << 0.0, 0.0, 0.0;
+      external_acc_.setZero();
       last_external_acc_ << msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z; // revise as zero
       surpass_count_ = 0;
     }
@@ -406,8 +383,8 @@ void NMPCManage::extforceCallback(const geometry_msgs::WrenchStamped &msg)
       double surpass = max(max(abs(diff(0)), abs(diff(1))), abs(diff(2)));
 
       if (surpass > ext_noise_bound_)
-      { // -0.5  and  + 0.5
-        ROS_INFO_STREAM("[NMPCSolver::extforceCallback]: external forces varies too large, need to replan ! ");
+      { 
+        ROS_INFO_STREAM("[resilient_planner]: External forces varies too large, need to replan ! ");
         ROS_INFO_STREAM("last_external_acc_: \n"  << last_external_acc_);
         ROS_INFO_STREAM("external_acc: \n"    << external_acc_);
 
@@ -501,15 +478,16 @@ void NMPCManage::odometryTransCallback(const nav_msgs::Odometry &msg)
 }
 
 // revise from fast planner
-void NMPCManage::waypointCallback(const nav_msgs::PathConstPtr &msg)
+void NMPCManage::goalCallback(const geometry_msgs::PoseStamped &msg)
 {
 
-  if (msg->poses[0].pose.position.z < -0.1) return;
+  if (msg.pose.position.z < -0.1) return;
   cout << "Triggered!" << endl;
   trigger_ = true;
   have_target_ = true;
 
-  end_pt_ << msg->poses[0].pose.position.x, msg->poses[0].pose.position.y, 1.2; // set z as 1
-  ROS_INFO_STREAM("[NMPCManage]The end point is : \n"  << end_pt_);
+  end_pt_ << msg.pose.position.x, msg.pose.position.y, 1.2; // fix z around 1-1.5
+  ROS_INFO_STREAM("[resilient_planner] The end point is : \n"  << end_pt_);
+  displayGoalPoint();
 
 }

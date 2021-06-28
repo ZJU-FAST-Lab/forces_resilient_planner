@@ -7,18 +7,10 @@ Panels:
         - /Global Options1
         - /Status1
         - /Axes1
-        - /RobotModel1/Status1
-        - /VID1
         - /NMPC1
-        - /NMPC1/corridor1
-        - /NMPC1/kino_path1
-        - /Marker6
-        - /Path4
-        - /Marker8
-        - /Marker9
-        - /Marker12
+        - /NMPC1/corridor1/Status1
       Splitter Ratio: 0.5
-    Tree Height: 330
+    Tree Height: 317
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -47,12 +39,12 @@ Visualization Manager:
   Class: ""
   Displays:
     - Class: rviz/Axes
-      Enabled: false
-      Length: 20
+      Enabled: true
+      Length: 1
       Name: Axes
       Radius: 0.05000000074505806
       Reference Frame: <Fixed Frame>
-      Value: false
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -81,6 +73,87 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        hummingbird/base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/imugt_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/odometry_sensor1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/odometry_sensorgt_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/rotor_0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/rotor_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/rotor_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/rotor_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/vi_sensor/camera_depth_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/vi_sensor/camera_depth_optical_center_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/vi_sensor/camera_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/vi_sensor/camera_left_optical_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/vi_sensor/camera_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hummingbird/vi_sensor/ground_truth/odometry_sensor_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/vi_sensor/imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        hummingbird/vi_sensor/vi_sensor_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -91,15 +164,15 @@ Visualization Manager:
       Displays:
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /vid_estimator/pub_extForces_show
+          Marker Topic: /vimo_estimator/pub_extForces_show
           Name: forces_show
           Namespaces:
-            "": true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: /vid_estimator/camera_pose_visual
+          Marker Topic: /vimo_estimator/camera_pose_visual
           Name: MarkerArray
           Namespaces:
             {}
@@ -125,7 +198,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /vid_estimator/path
+          Topic: /vimo_estimator/path
           Unreliable: false
           Value: false
         - Class: rviz/Image
@@ -171,7 +244,7 @@ Visualization Manager:
             Shaft Length: 1
             Shaft Radius: 0.05000000074505806
             Value: Arrow
-          Topic: /vid_estimator/imu_propagate
+          Topic: /vimo_estimator/imu_propagate
           Unreliable: false
           Value: false
       Enabled: true
@@ -181,7 +254,7 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.9500000476837158
+            Max Value: 2.950000047683716
             Min Value: -0.05000000074505806
             Value: true
           Axis: Z
@@ -252,14 +325,6 @@ Visualization Manager:
           Topic: /resilient_planner_node/kino_path
           Unreliable: false
           Value: true
-        - Class: rviz/Marker
-          Enabled: false
-          Marker Topic: /resilient_planner_node/position_cmd_vis
-          Name: cmd_vis
-          Namespaces:
-            {}
-          Queue Size: 100
-          Value: false
         - Class: rviz/Image
           Enabled: true
           Image Topic: /hummingbird/vi_sensor/camera_depth/depth/disparity
@@ -273,13 +338,13 @@ Visualization Manager:
           Unreliable: false
           Value: true
         - Class: rviz/Marker
-          Enabled: true
+          Enabled: false
           Marker Topic: /resilient_planner_node/ref_traj
           Name: ref_traj
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/Marker
           Enabled: true
           Marker Topic: /resilient_planner_node/nmpc_traj
@@ -322,307 +387,24 @@ Visualization Manager:
           Topic: /hummingbird/ground_truth/odometry
           Unreliable: false
           Value: false
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /resilient_planner_node/position_cmd_vis
+          Name: cmd_vis
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /resilient_planner_node/goal_point
+          Name: goal
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
       Enabled: true
       Name: NMPC
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /state_machine_node/optimized_traj_pos
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 25; 255; 0
-      Enabled: false
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /waypoint_generator/waypoints
-      Unreliable: false
-      Value: false
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.10000000149011612
-      Axes Radius: 0.6000000238418579
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: false
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Axes
-      Topic: /waypoint_generator/waypoints_vis
-      Unreliable: false
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /resilient_planner_node/goal_point
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 25; 255; 0
-      Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Billboards
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /waypoint_generator/waypoints
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: false
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Arrow (Flat)
-      Topic: /waypoint_generator/waypoints_vis
-      Unreliable: false
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /ego_planner_node/a_star_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /ego_planner_node/optimal_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /ego_planner_node/global_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 2.3499999046325684
-        Min Value: 0.25
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: AxisColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.10000000149011612
-      Style: Flat Squares
-      Topic: /ego_planner_node/grid_map/occupancy_inflate
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Angle Tolerance: 0.10000000149011612
-      Class: rviz/Odometry
-      Covariance:
-        Orientation:
-          Alpha: 0.5
-          Color: 255; 255; 127
-          Color Style: Unique
-          Frame: Local
-          Offset: 1
-          Scale: 1
-          Value: true
-        Position:
-          Alpha: 0.30000001192092896
-          Color: 204; 51; 204
-          Scale: 1
-          Value: true
-        Value: true
-      Enabled: false
-      Keep: 100
-      Name: Odometry
-      Position Tolerance: 0.10000000149011612
-      Shape:
-        Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.10000000149011612
-        Color: 255; 25; 0
-        Head Length: 0.30000001192092896
-        Head Radius: 0.10000000149011612
-        Shaft Length: 1
-        Shaft Radius: 0.05000000074505806
-        Value: Axes
-      Topic: /hummingbird/ground_truth/odometry
-      Unreliable: false
-      Value: false
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 78; 154; 6
-      Enabled: false
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Billboards
-      Line Width: 0.10000000149011612
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /resilient_planner_node/ref_path
-      Unreliable: false
-      Value: false
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /odom_visualization/trajectory
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 117; 80; 123
-      Enabled: false
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /odom_visualization/path
-      Unreliable: false
-      Value: false
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /hummingbird/predicted_state
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /ego_planner_node/global_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /ego_planner_node/optimal_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /hummingbird/predicted_state
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /vid_estimator/pub_extForces_show
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.10000000149011612
-      Class: rviz/Pose
-      Color: 252; 233; 79
-      Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: Pose
-      Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
-      Shape: Arrow
-      Topic: /odom_visualization/pose
-      Unreliable: false
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /vid_estimator/robot
-      Name: Marker
-      Namespaces:
-        drone: true
-      Queue Size: 100
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -650,25 +432,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 17.585628509521484
+      Distance: 33.842376708984375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.196801662445068
-        Y: -0.6788457632064819
-        Z: -2.0027410984039307
+        X: 1.3577244281768799
+        Y: 0.09124678373336792
+        Z: 0.016159676015377045
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3797961473464966
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1221389770507812
+      Yaw: 3.142144203186035
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539
@@ -758,7 +540,7 @@ Window Geometry:
   Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000003a7fc0200000011fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000187000000c900fffffffb0000000a0049006d00610067006501000001ca000000e00000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006100000001d1000000b50000000000000000fb0000000a0064006500700074006801000002fe000000e60000000000000000fb0000001600640065007000740068005f0069006d00610067006501000002b0000001340000001600fffffffb0000000a0049006d00610067006501000003f4000001190000000000000000fb0000000a0049006d00610067006501000001480000010c0000000000000000fb0000000a0056006900650077007300000001eb000000a4000000a400fffffffb0000000a0049006d0061006700650100000271000000c20000000000000000fb0000000a0049006d0061006700650100000263000000e10000000000000000000000010000010f00000385fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006100000003bfc0100000002fb0000000800540069006d0065000000000000000610000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000005e1000003a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000003a7fc0200000011fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000017a000000c900fffffffb0000000a0049006d00610067006501000001bd0000010a0000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006100000001d1000000b50000000000000000fb0000000a0064006500700074006801000002fe000000e60000000000000000fb0000001600640065007000740068005f0069006d00610067006501000002cd000001170000001600fffffffb0000000a0049006d00610067006501000003f4000001190000000000000000fb0000000a0049006d00610067006501000001480000010c0000000000000000fb0000000a0056006900650077007300000001eb000000a4000000a400fffffffb0000000a0049006d0061006700650100000271000000c20000000000000000fb0000000a0049006d0061006700650100000263000000e10000000000000000000000010000010f00000385fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006100000003bfc0100000002fb0000000800540069006d0065000000000000000610000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000005e1000003a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

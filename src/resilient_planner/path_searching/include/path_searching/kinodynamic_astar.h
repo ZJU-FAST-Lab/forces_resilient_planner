@@ -109,7 +109,7 @@ private:
   Eigen::Vector3d start_vel_, end_vel_, start_acc_, end_pt_;
   Eigen::Matrix<double, 6, 6> phi_;  // state transit matrix
 
-  tgk_planner::OccMap::Ptr grid_map_;
+  resilient_planner::OccMap::Ptr grid_map_;
 
   Eigen::Vector3d external_acc_;
 
@@ -167,7 +167,7 @@ public:
              Eigen::Vector3d end_pt, Eigen::Vector3d end_vel, bool init, bool dynamic = false,
              double time_start = -1.0);
 
-  void intialGridMap(tgk_planner::OccMap::Ptr& env_ptr_);
+  void intialGridMap(OccMap::Ptr& env_ptr_);
 
   std::vector<Eigen::Vector3d> getKinoTraj(double delta_t);
 

@@ -20,6 +20,7 @@ extern void FORCESNLPsolver_normal_casadi2forces(FORCESNLPsolver_normal_float *x
                                                  solver_int32_default iteration,        /* iteration number of solver                          */
                                                  solver_int32_default threadID /* Id of caller thread 								   */);
 
+
 namespace resilient_planner
 {
 
@@ -28,22 +29,18 @@ namespace resilient_planner
     /* FORCES PRO interface */
     extfunc_eval_ = &FORCESNLPsolver_normal_casadi2forces;
     params_.num_of_threads = 1;
-
-
-
-
-
+    
   }
 
 
-  void FORCESNormal::setParasNormal(double &w_stage_wp,  double &w_stage_input, double &w_input_rate,
-                               double &w_terminal_wp, double &w_terminal_input)
+  void FORCESNormal::setParasNormal(double w_stage_wp,  double w_stage_input, double w_input_rate,
+                                    double w_terminal_wp, double w_terminal_input)
   {
 
     /* FORCES PRO NORMAL solver */
     for (int i = 0; i < value_.planning_horizon; i++)
     {
-      //index.p.weights       =   7:9 ;                           % [w_wp, w_input, w_input_rate]
+      //index.p.weights       =   7:9 ; 
       params_.all_parameters[i * value_.num_iter + 6] = w_stage_wp;    // w_wp
       params_.all_parameters[i * value_.num_iter + 7] = w_stage_input; // w_input
       params_.all_parameters[i * value_.num_iter + 8] = w_input_rate;  // w_input_rate
@@ -55,18 +52,13 @@ namespace resilient_planner
   }
 
 
-
-
   int FORCESNormal::solveNormal(MPCDeque &mpc_output, Eigen::Vector3d &external_acc,
                                 vector<Eigen::Vector3d> &ref_total_pos,
                                 vector<double> &ref_total_yaw,
                                 vector<Eigen::Matrix3d> &ellipsoid_matrices,
                                 vector<LinearConstraint3D> &poly_constraints, Eigen::VectorXd &poly_indices)
   {
-
-
-
-
+    // state position
     params_.xinit[0] = mpc_output.at(1)(8);
     params_.xinit[1] = mpc_output.at(1)(9);
     params_.xinit[2] = mpc_output.at(1)(10);
@@ -81,8 +73,7 @@ namespace resilient_planner
 
     for (int i = 0; i < value_.planning_horizon; i++)
     {
-      // control input index.z.inputs        =   1:5  ;
-      // control input index.z.inputs = 1:4; [rollrate_c, pitchrate_c, yawrate_c, thrust_c]
+      // control input index.z.inputs
       params_.x0[i * value_.num_var + 0] = mpc_output.at(i + 1)(0);
       params_.x0[i * value_.num_var + 1] = mpc_output.at(i + 1)(1);
       params_.x0[i * value_.num_var + 2] = mpc_output.at(i + 1)(2);
@@ -96,25 +87,26 @@ namespace resilient_planner
       params_.x0[i * value_.num_var + 8] = mpc_output.at(i + 1)(8);
       params_.x0[i * value_.num_var + 9] = mpc_output.at(i + 1)(9);
       params_.x0[i * value_.num_var + 10] = mpc_output.at(i + 1)(10);
-      // index.z.vel          =   9:11 ;        % velocity, [vx, vy, vz]
+      // index.z.vel          =   9:11 ;
       params_.x0[i * value_.num_var + 11] = mpc_output.at(i + 1)(11);
       params_.x0[i * value_.num_var + 12] = mpc_output.at(i + 1)(12);
       params_.x0[i * value_.num_var + 13] = mpc_output.at(i + 1)(13);
-      // index.z.euler        =   12:14;  [roll, pitch, yaw]
+      // index.z.euler        =   12:14;
       params_.x0[i * value_.num_var + 14] = mpc_output.at(i + 1)(14);
       params_.x0[i * value_.num_var + 15] = mpc_output.at(i + 1)(15);
       params_.x0[i * value_.num_var + 16] = mpc_output.at(i + 1)(16);
 
-      // index.p.wayPoint      =   1:3 ;                           % [xg, yg, zg]  is the reference path point
+      // index.p.wayPoint      =   1:3 ;
       params_.all_parameters[i * value_.num_iter + 0] = ref_total_pos.at(i)(0);
       params_.all_parameters[i * value_.num_iter + 1] = ref_total_pos.at(i)(1);
       params_.all_parameters[i * value_.num_iter + 2] = ref_total_pos.at(i)(2);
-      // index.p.extForceBias  =   4:6 ;                           % the external force
+      // index.p.extForceBias  =   4:6 ;
       params_.all_parameters[i * value_.num_iter + 3] = external_acc(0);
       params_.all_parameters[i * value_.num_iter + 4] = external_acc(1);
       params_.all_parameters[i * value_.num_iter + 5] = external_acc(2);
-      // index.p.yaw           =   10  ;                           % the reference yaw
-      params_.all_parameters[i * value_.num_iter + 9] = ref_total_yaw.at(i); // the reference yaw is calculated each time. and update
+      // index.p.yaw           =   10  ;
+      params_.all_parameters[i * value_.num_iter + 9] = ref_total_yaw.at(i); 
+      // the reference yaw is calculated each time. and update
 
       VecDf b = (poly_constraints.at(poly_indices(i))).b();
       MatD3f A_const = (poly_constraints.at(poly_indices(i))).A();
@@ -129,9 +121,7 @@ namespace resilient_planner
           params_.all_parameters[i * value_.num_iter + value_.num_pre_params + j * 3 + 2] = A_const(j, 2);
 
           // index.p.polyConstb ;   % 1*n    nmax = 30;s
-          //A << A_const(j, 0), A_const(j, 1), A_const(j, 2);
           Eigen::MatrixXd temp_a = ellipsoid_matrices.at(i) * (A_const.row(j)).transpose();
-          //b_addition(i,j) = temp_a.norm();
           params_.all_parameters[i * value_.num_iter + value_.num_pre_params + value_.num_const * 3 + j] = b(j) - temp_a.norm();
         }
         else
@@ -146,50 +136,11 @@ namespace resilient_planner
       }
     }
 
-
-
-
-      // for (int i = 0; i < value_.planning_horizon; i++)
-      // {
-      //   for (int j = 0; j < value_.num_iter; ++j)
-      //   {
-      //     std::cout << params_.all_parameters[i * value_.num_iter + j] << " ";
-      //   }
-      //   std::cout << "\n"   << std::endl;
-      // }
-      // std::cout << "============================ params.all_parameters====================================" << std::endl;
-      for (int i = 0; i < value_.planning_horizon; i++)
-      {
-        for (int j = 0; j < value_.num_var; ++j)
-        {
-          std::cout << params_.x0[i * value_.num_var + j] << " ";
-        }
-        std::cout << "\n"
-                  << std::endl;
-      }
-      std::cout << "===============================params.x0=================================" << std::endl;
-      for (int j = 0; j < 9; ++j)
-      {
-        std::cout << params_.xinit[j] << " ";
-      }
-      std::cout << "\n"
-                << std::endl;
-      std::cout << "=================================params.xinit===============================" << std::endl;
-
-      for (int j = 0; j < 20; ++j)
-      {
-        std::cout <<ref_total_pos.at(j)<< " ";
-      }
-      std::cout << "================================reference points===============================" << std::endl;
-
-
-
     return FORCESNLPsolver_normal_solve(&params_, &output_, &info_, NULL, extfunc_eval_);
   }
 
   void FORCESNormal::updateNormal(MPCDeque &mpc_output)
   {
-    cout << "NMPCSolver::updateMPCOutput: the normal mode  " << endl;
     for (int j = 0; j < value_.num_var; j++)
     {
       mpc_output.at(0)(j) = output_.x01[j];
@@ -215,11 +166,5 @@ namespace resilient_planner
     }
 
   }
-
-
-
-
-
-
 
 } // end resilient_planner

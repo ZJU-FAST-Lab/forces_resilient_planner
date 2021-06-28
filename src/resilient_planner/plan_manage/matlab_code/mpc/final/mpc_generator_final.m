@@ -13,13 +13,12 @@ model.ineq = @(z, p) mpc_corridorconst(z, p);
 model.hl = -inf*ones(model.nh, 1);
 model.hu = 0.00001*ones(model.nh, 1);
 
-
 %% Objective function
 
 model.objective{1} = @(z, p)mpc_objective1(z, p);
 
 for i = 2: model.N -1
-   model.objective{i}= @(z, p)mpc_objective(z, p);
+   model.objective{i}= @(z, p)mpc_objective_final(z, p);
  end
 
 model.objective{model.N} = @(z, p)mpc_objectiveN_final(z, p);
@@ -36,7 +35,6 @@ model.ub(index.z.inputs) = [ pr.input.maxRollRate,  pr.input.maxPitchRate,  pr.i
 % position should be in the map
 model.lb(index.z.pos) = [-pr.mapsize(1), -pr.mapsize(2), 0.0];
 model.ub(index.z.pos) = [ pr.mapsize(1),  pr.mapsize(2),  pr.mapsize(3)];
-
 
 % velocity is hardly constrained
 model.lb(index.z.vel) = [-pr.state.maxVx, -pr.state.maxVy, -pr.state.maxVz];
@@ -99,7 +97,7 @@ mkdir(folder_name);
 rmdir(files_name, 's');
 mkdir(files_name);
 
-% move the generated solver to the folder        % move the folder
+% move the generated solver to the folder
 movefile('*.c', folder_name);
 movefile('*.h', folder_name);
 movefile(solver_name, folder_name); 

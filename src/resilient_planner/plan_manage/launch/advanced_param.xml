@@ -12,7 +12,8 @@
   <arg name="forces_topic"/>
   <arg name="thrust_topic"/>
   <arg name="depth_topic"/>
-
+  <arg name="goal_topic"/>
+  
   <arg name="cx"/>
   <arg name="cy"/>
   <arg name="fx"/>
@@ -35,7 +36,6 @@
   <arg name="nmpc/w_final_terminal_wp" />
   <arg name="nmpc/w_final_terminal_input" />
 
-  
   <arg name="nmpc/drag_coefficient"/>
   <arg name="nmpc/w_input_rate"/>
   <arg name="nmpc/ego_r" />
@@ -51,11 +51,15 @@
     <remap from="/forces" to="$(arg forces_topic)"/> 
     <remap from="/thrust" to="$(arg thrust_topic)"/> 
     <remap from="/depth_topic" to="$(arg depth_topic)" />
- 
+    <remap from="/goal_topic" to="$(arg goal_topic)" />
+
     <!--mapping paras -->
     <param name="occ_map/map_size_x" value="$(arg map_size_x_)" type="double"/>
     <param name="occ_map/map_size_y" value="$(arg map_size_y_)" type="double"/>
     <param name="occ_map/map_size_z" value="$(arg map_size_z_)" type="double"/>
+    <param name="occ_map/origin_x" value="-20.0" type="double"/>
+    <param name="occ_map/origin_y" value="-20.0" type="double"/>
+    <param name="occ_map/origin_z" value="-1" type="double"/>
     <param name="occ_map/local_radius_x"  value="6" /> 
     <param name="occ_map/local_radius_y"  value="6" /> 
     <param name="occ_map/local_radius_z"  value="3" />
@@ -88,13 +92,6 @@
     <param name="occ_map/max_ray_length" value="6.0"/>
     <param name="occ_map/use_global_map" value="$(arg use_global_map)"/>
     <!--mapping paras end-->
-
-    <param name="pos_checker/hrz_safe_radius" value="0.2"/>
-    <param name="pos_checker/vtc_safe_radius" value="$(arg nmpc/ego_h)"/>
-    <param name="pos_checker/copter_diag_len" value="$(arg nmpc/ego_r)"/>  
-    <param name="pos_checker/dt" value="0.015"/>
-    <param name="pos_checker/inflate" value="true"/>
-
 
     <!-- kinodynamic path searching -->
     <param name="search/max_tau" value="0.5" type="double"/>
@@ -133,6 +130,9 @@
     <param name="nmpc/init_y" value="$(arg init_y)"/>
     <param name="nmpc/init_z" value="$(arg init_z)"/>
     <param name="nmpc/sim_odom_type" value="$(arg sim_odom_type)"/>
+    <param name="nmpc/ext_noise_bound" value="0.5" type="double"/>
+
+
 
   </node>
 

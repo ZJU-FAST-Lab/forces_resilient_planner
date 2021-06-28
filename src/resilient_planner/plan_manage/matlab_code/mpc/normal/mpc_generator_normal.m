@@ -19,7 +19,7 @@ model.hu = 0.00001*ones(model.nh, 1);
 model.objective{1} = @(z, p)mpc_objective1(z, p);
 
 for i = 2: model.N -1
-   model.objective{i}= @(z, p)mpc_objective(z, p);
+   model.objective{i}= @(z, p)mpc_objective_normal(z, p);
  end
 
 model.objective{model.N} = @(z, p)mpc_objectiveN_normal(z, p);
@@ -41,7 +41,7 @@ model.ub(index.z.pos) = [ pr.mapsize(1),  pr.mapsize(2),  pr.mapsize(3)];
 model.lb(index.z.vel) = [-pr.state.maxVx, -pr.state.maxVy, -pr.state.maxVz];
 model.ub(index.z.vel) = [ pr.state.maxVx,  pr.state.maxVy,  pr.state.maxVz];
 
-% euler angles are constrained to be within [-pi, pi]
+% euler angles are constrained
 model.lb(index.z.euler) = [-0.4*pi, -0.4*pi, -2*pi];
 model.ub(index.z.euler) = [ 0.4*pi,  0.4*pi,  2*pi];
 
@@ -94,7 +94,7 @@ mkdir(folder_name);
 rmdir(files_name, 's');
 mkdir(files_name);
 
-% move the generated solver to the folder        % move the folder
+% move the generated solver to the folder
 movefile('*.c', folder_name);
 movefile('*.h', folder_name);
 movefile(solver_name, folder_name); 

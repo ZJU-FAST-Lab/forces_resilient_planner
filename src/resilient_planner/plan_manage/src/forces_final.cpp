@@ -20,6 +20,7 @@ extern void FORCESNLPsolver_final_casadi2forces(FORCESNLPsolver_final_float *x, 
                                                 solver_int32_default iteration,       /* iteration number of solver                          */
                                                 solver_int32_default threadID /* Id of caller thread 								   */);
 
+
 namespace resilient_planner
 {
 
@@ -29,13 +30,12 @@ namespace resilient_planner
     extfunc_eval_final_ = &FORCESNLPsolver_final_casadi2forces;
     params_final_.num_of_threads = 1;
 
-
   }
 
-  void FORCESFinal::setParasFinal(double &w_final_stage_wp,  double &w_final_stage_input, double &w_input_rate,
-                                  double &w_final_terminal_wp, double &w_final_terminal_input)
-  {
 
+  void FORCESFinal::setParasFinal(double w_final_stage_wp,  double w_final_stage_input, double w_input_rate,
+                                  double w_final_terminal_wp, double w_final_terminal_input)
+  {
     /* FORCES PRO TERMINAL solver */
     for (int i = 0; i < value_final_.planning_horizon; i++)
     {
@@ -52,11 +52,12 @@ namespace resilient_planner
 
 
   int FORCESFinal::solveFinal(MPCDeque &mpc_output,  Eigen::Vector3d  &external_acc,
-                          vector<Eigen::Vector3d> &ref_total_pos,
-                          vector<double> &ref_total_yaw,
-                          vector<Eigen::Matrix3d>  &ellipsoid_matrices,
-                          vector<LinearConstraint3D> &poly_constraints, Eigen::VectorXd &poly_indices)
+                              vector<Eigen::Vector3d> &ref_total_pos,
+                              vector<double> &ref_total_yaw,
+                              vector<Eigen::Matrix3d>  &ellipsoid_matrices,
+                              vector<LinearConstraint3D> &poly_constraints, Eigen::VectorXd &poly_indices)
   {
+    // state position
     params_final_.xinit[0] = mpc_output.at(1)(8);
     params_final_.xinit[1] = mpc_output.at(1)(9);
     params_final_.xinit[2] = mpc_output.at(1)(10);
@@ -71,8 +72,7 @@ namespace resilient_planner
 
     for (int i = 0; i < value_final_.planning_horizon; i++)
     {
-      // control input index.z.inputs        =   1:5  ;
-      // control input index.z.inputs = 1:4; [rollrate_c, pitchrate_c, yawrate_c, thrust_c]
+      // control input index.z.inputs
       params_final_.x0[i * value_final_.num_var + 0] = mpc_output.at(i + 1)(0);
       params_final_.x0[i * value_final_.num_var + 1] = mpc_output.at(i + 1)(1);
       params_final_.x0[i * value_final_.num_var + 2] = mpc_output.at(i + 1)(2);
@@ -86,25 +86,26 @@ namespace resilient_planner
       params_final_.x0[i * value_final_.num_var + 8] = mpc_output.at(i + 1)(8);
       params_final_.x0[i * value_final_.num_var + 9] = mpc_output.at(i + 1)(9);
       params_final_.x0[i * value_final_.num_var + 10] = mpc_output.at(i + 1)(10);
-      // index.z.vel          =   9:11 ;        % velocity, [vx, vy, vz]
+      // index.z.vel
       params_final_.x0[i * value_final_.num_var + 11] = mpc_output.at(i + 1)(11);
       params_final_.x0[i * value_final_.num_var + 12] = mpc_output.at(i + 1)(12);
       params_final_.x0[i * value_final_.num_var + 13] = mpc_output.at(i + 1)(13);
-      // index.z.euler        =   12:14;  [roll, pitch, yaw]
+      // index.z.euler
       params_final_.x0[i * value_final_.num_var + 14] = mpc_output.at(i + 1)(14);
       params_final_.x0[i * value_final_.num_var + 15] = mpc_output.at(i + 1)(15);
       params_final_.x0[i * value_final_.num_var + 16] = mpc_output.at(i + 1)(16);
 
-      // index.p.wayPoint      =   1:3 ;                           % [xg, yg, zg]  is the reference path point
+      // index.p.wayPoint
       params_final_.all_parameters[i * value_final_.num_iter + 0] = ref_total_pos.at(i)(0);
       params_final_.all_parameters[i * value_final_.num_iter + 1] = ref_total_pos.at(i)(1);
       params_final_.all_parameters[i * value_final_.num_iter + 2] = ref_total_pos.at(i)(2);
-      // index.p.extForceBias  =   4:6 ;                           % the external force
+      // index.p.extForceBias
       params_final_.all_parameters[i * value_final_.num_iter + 3] = external_acc(0);
       params_final_.all_parameters[i * value_final_.num_iter + 4] = external_acc(1);
       params_final_.all_parameters[i * value_final_.num_iter + 5] = external_acc(2);
-      // index.p.yaw           =   10  ;                           % the reference yaw
-      params_final_.all_parameters[i * value_final_.num_iter + 9] = ref_total_yaw.at(i); // the reference yaw is calculated each time. and update
+      // index.p.yaw
+      params_final_.all_parameters[i * value_final_.num_iter + 9] = ref_total_yaw.at(i); 
+      // the reference yaw is calculated each time. and update
 
       VecDf b = (poly_constraints.at(poly_indices(i))).b();
       MatD3f A_const = (poly_constraints.at(poly_indices(i))).A();
@@ -118,10 +119,8 @@ namespace resilient_planner
           params_final_.all_parameters[i * value_final_.num_iter + value_final_.num_pre_params + j * 3 + 1] = A_const(j, 1);
           params_final_.all_parameters[i * value_final_.num_iter + value_final_.num_pre_params + j * 3 + 2] = A_const(j, 2);
 
-          // index.p.polyConstb ;   % 1*n    nmax = 30;s
-          //A << A_const(j, 0), A_const(j, 1), A_const(j, 2);
+          // index.p.polyConstb ;     % 1*n    nmax = 30;
           Eigen::MatrixXd temp_a = ellipsoid_matrices.at(i) * (A_const.row(j)).transpose();
-          //b_addition(i,j) = temp_a.norm();
           params_final_.all_parameters[i * value_final_.num_iter + value_final_.num_pre_params + value_final_.num_const * 3 + j] = b(j) - temp_a.norm();
         }
         else
@@ -141,7 +140,6 @@ namespace resilient_planner
 
   void FORCESFinal::updateFinal(MPCDeque &mpc_output)
   {
-    cout << "NMPCSolver::updateMPCOutput: the Final mode  " << endl;
     for (int j = 0; j < value_final_.num_var; j++)
     {
       mpc_output.at(0)(j) = output_final_.x01[j];
