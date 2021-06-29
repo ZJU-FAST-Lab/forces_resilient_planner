@@ -54,7 +54,7 @@
     <arg name="use_global_map" value="false" />  
 
     <arg name="nmpc/w_stage_wp" value="7.0" />
-    <arg name="nmpc/w_stage_input" value="1.2"/>
+    <arg name="nmpc/w_stage_input" value="1.0"/>
     <arg name="nmpc/w_terminal_wp" value="12.0" />
     <arg name="nmpc/w_terminal_input" value="0.5"/>
 

@@ -330,7 +330,7 @@ void NMPCManage::checkReplanCallback(const ros::TimerEvent &e)
   {
     for (int i = 0; i < kino_path_.size(); i+= 5)
     {  
-      if (!env_ptr_->checkPosSurround(kino_path_[i], 1.1))
+      if (!env_ptr_->checkPosSurround(kino_path_[i], 1.2))
       {
         ROS_WARN("[checkReplan] Trajectory collides, replan.");
         changeFSMExecState(REPLAN_TRAJ, "SAFETY");

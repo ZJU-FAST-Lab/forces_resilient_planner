@@ -617,81 +617,81 @@ namespace resilient_planner
     // update At matrix
     double roll = odom_euler(0), pitch = odom_euler(1), yaw = odom_euler(2);
     double v1 = odom_vel(0), v2 = odom_vel(1), v3 = odom_vel(2);
-    double comb1 = cos(yaw)*sin(pitch)*sin(roll);
-    double comb2 = cos(roll)*sin(pitch)*sin(yaw);
+    double comb0 = thrust_c * 1.0 / mass;
 
+    double comb5 = cos(pitch)*sin(pitch);
+
+    double comb6 = cos(pitch)*sin(roll);
+    double comb7 = cos(pitch)*cos(roll);
+    double comb8 = sin(pitch)*cos(roll);
+    double comb9 = sin(pitch)*sin(roll);
+        
+    double comb1 = cos(roll)*sin(yaw) - comb9*cos(yaw);
+    double comb2 = sin(roll)*cos(yaw) - comb8*sin(yaw);
+    double comb3 = cos(roll)*cos(yaw) + comb9*sin(yaw);
+    double comb4 = sin(roll)*sin(yaw) + comb8*cos(yaw);
 
     // roll
-    At_(3, 6) = (thrust_c * 1.0 / mass) * (-comb1 + sin(yaw) * cos(roll));
-    At_(4, 6) = (thrust_c * 1.0 / mass) * (-sin(yaw)*sin(pitch)*sin(roll) - cos(yaw) * cos(roll));
-    At_(5, 6) = (thrust_c * 1.0 / mass) * (-sin(roll))*cos(pitch);
+    At_(3, 6) =  comb0*comb1;
+    At_(4, 6) = -comb0*comb3;
+    At_(5, 6) = -comb0*comb6;
     // pitch
-    At_(3, 7) = (thrust_c * 1.0 / mass) * (cos(yaw) * cos(pitch) * cos(roll));
-    At_(4, 7) = (thrust_c * 1.0 / mass) * (sin(yaw) * cos(pitch) * cos(roll));
-    At_(5, 7) = (thrust_c * 1.0 / mass) * cos(roll) * (-sin(pitch));
+    At_(3, 7) =  comb0*comb7*cos(yaw);
+    At_(4, 7) =  comb0*comb7*sin(yaw);
+    At_(5, 7) = -comb0*comb8;
     // yaw
-    At_(3, 8) = (thrust_c * 1.0 / mass) *(-comb2 + cos(yaw) * sin(roll));
-    At_(4, 8) = (thrust_c * 1.0 / mass) *(cos(yaw)*sin(pitch)*cos(roll) + sin(yaw) * sin(roll));
+    At_(3, 8) =  comb0*comb2;
+    At_(4, 8) =  comb0*comb4;
 
     // add gradients with drag coefficient term (in some case we can neglect this term)
     Eigen::Matrix3d R_cur = eulerToRot(odom_euler);
 
     At_.block(3, 3, 3, 3) = R_cur * drag_coefficient_matrix_ * R_cur.transpose(); //transpose does not change
+    
     double drag = drag_coefficient_matrix_(0, 0);
-    double cos_pitch_square = cos(pitch)*cos(pitch);
-    double sin_pitch_square = sin(pitch)*sin(pitch);
-    double cos_yaw_square = cos(yaw)*cos(yaw);
-    double sin_yaw_square = sin(yaw)*sin(yaw);
-    double sin_roll_square = sin(roll)*sin(roll);
-    double temp_sqaure1 = pow(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw), 2);
-    double temp_sqaure2 = pow(cos(roll)*sin(yaw) - comb1, 2);
+    double cos_pitch_sq = cos(pitch)*cos(pitch);
+    double sin_pitch_sq = sin(pitch)*sin(pitch);
+    double cos_yaw_sq   = cos(yaw)*cos(yaw);
+    double sin_yaw_sq   = sin(yaw)*sin(yaw);
+    double sin_roll_sq  = sin(roll)*sin(roll);
+    double temp_sqaure1 = pow(comb3, 2);
+    double temp_sqaure2 = pow(comb1, 2);
 
     Eigen::Vector3d temp1, temp2;
     Eigen::Vector4d temp3;
 
-    temp1(0) = drag*cos(pitch)*sin(roll)*(sin(roll)*sin(yaw) + cos(roll)*cos(yaw)*sin(pitch)) - drag*cos(pitch)*cos(roll)*(cos(roll)*sin(yaw) - comb1);
-    temp1(1) = drag*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw))*(sin(roll)*sin(yaw) + cos(roll)*cos(yaw)*sin(pitch)) + drag*(cos(roll)*sin(yaw) - comb1)*(cos(yaw)*sin(roll) - comb2);
-    temp1(2) = drag*cos(pitch)*sin(roll)*(cos(yaw)*sin(roll) - comb2) - drag*cos(pitch)*cos(roll)*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw));
+    temp1(0) = comb6*comb4 - comb7*comb1;
+    temp1(1) = comb3*comb4 + comb1*comb2;
+    temp1(2) = comb6*comb2 - comb7*comb3;
  
     // roll
-    At_(3, 6) +=   v3*temp1(0) + v2*temp1(1) 
-                 - 2*drag*v1*(sin(roll)*sin(yaw) + cos(roll)*cos(yaw)*sin(pitch))*(cos(roll)*sin(yaw) - comb1);
-
-    At_(4, 6) +=   v1*temp1(1) - v3*temp1(2) 
-                 - 2*drag*v2*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw))*(cos(yaw)*sin(roll) - comb2);
- 
-
-    At_(5, 6) +=   v1*temp1(0) - v2*temp1(2) 
-                 + 2*drag*v3*cos_pitch_square*cos(roll)*sin(roll);
+    At_(3, 6) +=  drag*(v3*temp1(0) + v2*temp1(1) - 2*v1*comb4*comb1);
+    At_(4, 6) +=  drag*(v1*temp1(1) - v3*temp1(2) - 2*v2*comb3*comb2);
+    At_(5, 6) +=  drag*(v1*temp1(0) - v2*temp1(2) + 2*v3*comb7*comb6);
  
     // pitch
-    temp2(0) = drag*cos(yaw)*sin_pitch_square - drag*cos_pitch_square*cos(yaw) + drag*sin(pitch)*sin(roll)*(cos(roll)*sin(yaw) - comb1) + drag*cos_pitch_square*cos(yaw)*sin_roll_square;
-    temp2(1) = 2*drag*cos(pitch)*cos(yaw)*sin(pitch)*sin(yaw) - drag*cos(pitch)*cos(yaw)*sin(roll)*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw)) + drag*cos(pitch)*sin(roll)*sin(yaw)*(cos(roll)*sin(yaw) - comb1);
-    temp2(2) = drag*cos_pitch_square*sin(yaw) - drag*sin_pitch_square*sin(yaw) + drag*sin(pitch)*sin(roll)*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw)) - drag*cos_pitch_square*sin_roll_square*sin(yaw);
+    temp2(0) =   cos(yaw)*(sin_pitch_sq - cos_pitch_sq + cos_pitch_sq*sin_roll_sq) + comb9*comb1;
+    temp2(1) =   2*comb5*cos(yaw)*sin(yaw) - comb6*(cos(yaw)*comb3 + sin(yaw)*comb1);
+    temp2(2) =   sin(yaw)*(cos_pitch_sq - sin_pitch_sq - cos_pitch_sq*sin_roll_sq) + comb9*comb3;
 
-    At_(3, 7) +=  v3*temp2(0) - v2*temp2(1)
-                - v1*(2*drag*cos(pitch)*cos_yaw_square*sin(pitch) + 2*drag*cos(pitch)*cos(yaw)*sin(roll)*(cos(roll)*sin(yaw) - comb1));
- 
-    At_(4, 7) += - v3*temp2(2) - v1*temp2(1) 
-                 - v2*(2*drag*cos(pitch)*sin(pitch)*sin_yaw_square - 2*drag*cos(pitch)*sin(roll)*sin(yaw)*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw)));
- 
-    At_(5, 7) +=   v1*temp2(0) - v2*temp2(2)
-                 + v3*(2*drag*cos(pitch)*sin(pitch) - 2*drag*cos(pitch)*sin(pitch)*sin_roll_square);
+    At_(3, 7) +=   drag*(v3*temp2(0) - v2*temp2(1) - v1*2*(comb5*cos_yaw_sq + comb6*comb1*cos(yaw)));
+    At_(4, 7) += - drag*(v3*temp2(2) - v1*temp2(1) - v2*2*(comb5*sin_yaw_sq - comb6*comb3*sin(yaw)));
+    At_(5, 7) +=   drag*(v1*temp2(0) - v2*temp2(2) + v3*2*(comb5 - comb5*sin_roll_sq));
  
     // yaw
-    temp3(0) = 2*drag*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw))*(cos(roll)*sin(yaw) - comb1) - 2*drag*cos_pitch_square*cos(yaw)*sin(yaw);
-    temp3(1) = drag*cos(pitch)*sin(roll)*(cos(roll)*cos(yaw) + sin(pitch)*sin(roll)*sin(yaw)) - drag*cos(pitch)*sin(pitch)*sin(yaw);
-    temp3(2) = drag*(temp_sqaure1 - temp_sqaure2 - cos_pitch_square*cos_yaw_square + cos_pitch_square*sin_yaw_square);
-    temp3(3) = drag*cos(pitch)*sin(roll)*(cos(roll)*sin(yaw) - comb1) + drag*cos(pitch)*cos(yaw)*sin(pitch);
+    temp3(0) = 2*drag*(comb3*comb1 - cos_pitch_sq*cos(yaw)*sin(yaw));
+    temp3(1) =   drag*(comb6*comb3 - comb5*sin(yaw));
+    temp3(2) =   drag*(temp_sqaure1 - temp_sqaure2 - cos_pitch_sq*cos_yaw_sq + cos_pitch_sq*sin_yaw_sq);
+    temp3(3) =   drag*(comb6*comb1 + comb5*cos(yaw));
 
     At_(3, 8) +=   v1*temp3(0)  - v3*temp3(1) - v2*temp3(2);
     At_(4, 8) += - v1*temp3(2)  - v3*temp3(3) - v2*temp3(0);
     At_(5, 8) += - v2*temp3(3)  - v1*temp3(1);
  
     // update Bt matrix
-    Bt_(3, 3) = 1.0 / mass * (cos(yaw)*sin(pitch)*cos(roll) + sin(yaw) * sin(roll));
-    Bt_(4, 3) = 1.0 / mass * (sin(yaw)*sin(pitch)*cos(roll) - cos(yaw) * sin(roll));
-    Bt_(5, 3) = 1.0 / mass * cos(roll)*cos(pitch);
+    Bt_(3, 3) =  1.0 / mass*comb4;
+    Bt_(4, 3) = -1.0 / mass*comb2;
+    Bt_(5, 3) =  1.0 / mass*comb7;
 
     Phi_ = At_ + Bt_ * Kt_;
 
