@@ -103,7 +103,7 @@ After finishing the setup process, use the keyboard to make the quadrotor hoveri
 
 In directory ``~/forces_resilient_planner``, open a new terminal and launch the resilient planner:
 ```
-source devel/setup.bash && roslaunch resilient_planner rotor_sim.launch
+source devel/setup.bash && roslaunch resilient_planner rotors_sim.launch
 ```
 
 If everything goes well, you should be able to navigate the drone by 2D-Nav Goal.
