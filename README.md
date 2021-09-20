@@ -20,8 +20,7 @@ __Authors__: [Yuwei WU](https://www.seas.upenn.edu/~yuweiwu/)  and [Fei GAO](htt
 
 __Video Links__:  [youtube](https://youtu.be/nSKbzAM0v18) or [bilibili](https://www.bilibili.com/video/BV1eX4y137vn/) (for Mainland China)
 
-__Related Paper__: [arxiv](https://arxiv.org/pdf/2103.11178.pdf)
-
+__Related Paper__: Y. Wu, Z. Ding, C. Xu and F. Gao, "External Forces Resilient Safe Motion Planning for Quadrotor," in IEEE Robotics and Automation Letters, vol. 6, no. 4, pp. 8506-8513. [arxiv Preprint](https://arxiv.org/pdf/2103.11178.pdf), [IEEE Xplore](https://ieeexplore.ieee.org/abstract/document/9531427/)
 
 __Architecture__:
 <p align="center">
@@ -31,12 +30,15 @@ __Architecture__:
 
 If this repo helps your research, please cite our paper at:
 ```bibtex
-@article{wu2021external,
-  title={External Forces Resilient Safe Motion Planning for Quadrotor},
+@ARTICLE{9531427,
   author={Wu, Yuwei and Ding, Ziming and Xu, Chao and Gao, Fei},
-  journal={arXiv preprint arXiv:2103.11178},
-  year={2021}
-}
+  journal={IEEE Robotics and Automation Letters}, 
+  title={External Forces Resilient Safe Motion Planning for Quadrotor}, 
+  year={2021},
+  volume={6},
+  number={4},
+  pages={8506-8513},
+  doi={10.1109/LRA.2021.3110316}}
 ```
 
 ##  Acknowledgements
@@ -103,7 +105,7 @@ After finishing the setup process, use the keyboard to make the quadrotor hoveri
 
 In directory ``~/forces_resilient_planner``, open a new terminal and launch the resilient planner:
 ```
-source devel/setup.bash && roslaunch resilient_planner rotor_sim.launch
+source devel/setup.bash && roslaunch resilient_planner rotors_sim.launch
 ```
 
 If everything goes well, you should be able to navigate the drone by 2D-Nav Goal.
